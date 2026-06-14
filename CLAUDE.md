@@ -10,6 +10,26 @@ Ladder Trading** forum (f=123). It's a Next.js control panel + JSON API that rea
 from a hosted Postgres and shows: FMV per item, a snipe feed, stash mark-to-market,
 ISO matches, and rune↔FG exchange rates.
 
+## Commands
+
+- `npm run dev` — start the Next.js dev server (http://localhost:3000).
+- `npm run build` — production build; `npm run start` serves it.
+- `npm run db:schema` / `db:seed` — load `db/schema.sql` / `db/seed.sql` via psql.
+- `npm run db:load` — psql-free loader (Node + pg) for schema + seed; use on Windows
+  where psql isn't installed.
+
+One-time setup, in order:
+`npm install` → set `DATABASE_URL` in `.env` → `npm run db:load` → `npm run dev`.
+Re-validate schema+seed load cleanly: point `DATABASE_URL` at a scratch/empty Postgres
+and run `npm run db:load` — it must apply error-free.
+
+## Layout
+
+- `db/` — `schema.sql` (the §"Data model" DDL) + `seed.sql` (chase items + variants).
+- `lib/db.ts` — `pg` Pool singleton (serverless-safe). `lib/types.ts` — TS row types.
+- `app/api/*` — read-only route handlers (items, fmv, listings, snipes, iso, inventory,
+  exchange-rates). `app/page.tsx` — the bare functional dashboard.
+
 ## Architecture — the split is the whole point
 
 This repo deploys to **Vercel** and ONLY READS the database.
@@ -24,6 +44,13 @@ the scraper box = what touches d2jsp.**
 Do NOT add scraping, Cloudflare-fetching, or a continuous loop to this repo.
 Do NOT rely on Vercel cron for time-sensitive alerts — the scraper process fires
 those itself right after each scrape pass (it has the freshest data).
+
+The scraper / parser / resolution / alert code lives in a SEPARATE repo and process
+(`../d2jsp-scraper`, Python) — it is not in this repo, so don't add it here or go
+looking for it here. Empirically confirmed: f=123 serves a Cloudflare *managed*
+challenge (needs JS), so the scraper fetches via a real browser (Playwright) from a
+residential IP. (The earlier "Vercel datacenter IPs get challenged" rationale was
+deep-research-flagged as unverified; the residential-browser approach is the real reason.)
 
 ## Stack
 
