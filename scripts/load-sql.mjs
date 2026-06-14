@@ -16,9 +16,11 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const connectionString = process.env.DATABASE_URL;
+// Prefer the UNPOOLED (direct) connection for DDL — schema loads shouldn't go
+// through Neon's pooler. Fall back to DATABASE_URL if that's all we have.
+const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!connectionString) {
-  console.error('DATABASE_URL is not set (expected via --env-file=.env).');
+  console.error('Neither DATABASE_URL_UNPOOLED nor DATABASE_URL is set (expected via --env-file=.env).');
   process.exit(1);
 }
 
